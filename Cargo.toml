@@ -1,7 +1,7 @@
 [workspace]
 resolver = "2"
 
-members = ["client"]
+members = ["frontend"]
 
 [profile.release]
 lto = true
