@@ -1,5 +1,5 @@
 [package]
-name = "frontend"
+name = "backend"
 version = "0.0.1"
 authors = ["Oleksandr Kovalov <oleksandr.kovalov.work@gmail.com>"]
 
@@ -16,8 +16,5 @@ repository = "https://github.com/xairaven/ShadowGuessr"
 workspace = true
 
 [dependencies]
-backend = { path = "../backend" }
-
-fern = "0.7.1"
 log = "0.4.29"
 thiserror = "2.0.18"
