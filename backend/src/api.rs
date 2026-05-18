@@ -35,6 +35,10 @@ impl ApiClient {
             .json()
             .map_err(ApiError::Deserialize)?;
 
+        if response.status != "OK" {
+            return Err(ApiError::BadStatus(response.status));
+        }
+
         Ok(response.location)
     }
 }
@@ -58,6 +62,9 @@ pub struct Location {
 
 #[derive(Debug, Error)]
 pub enum ApiError {
+    #[error("Google Maps API returned error status: {0}")]
+    BadStatus(String),
+
     #[error("Invalid HEX Pano ID. {0}")]
     InvalidHexPano(hex::FromHexError),
 
