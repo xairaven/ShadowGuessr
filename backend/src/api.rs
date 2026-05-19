@@ -16,12 +16,7 @@ impl ApiClient {
         }
     }
 
-    fn decode_pano(hex_pano: &str) -> Result<String, ApiError> {
-        let bytes = hex::decode(hex_pano).map_err(ApiError::InvalidHexPano)?;
-        String::from_utf8(bytes).map_err(ApiError::InvalidUtf8)
-    }
-
-    fn fetch_coordinates(&self, pano_id: &str) -> Result<Location, ApiError> {
+    pub fn fetch_coordinates(&self, pano_id: &str) -> Result<Location, ApiError> {
         let url = format!(
             "https://maps.googleapis.com/maps/api/streetview/metadata?pano={}&key={}",
             pano_id, self.key
@@ -64,12 +59,6 @@ pub struct Location {
 pub enum ApiError {
     #[error("Google Maps API returned error status: {0}")]
     BadStatus(String),
-
-    #[error("Invalid HEX Pano ID. {0}")]
-    InvalidHexPano(hex::FromHexError),
-
-    #[error("Invalid UTF-8 Pano ID. {0}")]
-    InvalidUtf8(std::string::FromUtf8Error),
 
     #[error("Request send failed. {0}")]
     RequestSend(reqwest::Error),
