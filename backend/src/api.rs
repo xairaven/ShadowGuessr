@@ -34,17 +34,19 @@ impl ApiClient {
             return Err(ApiError::BadStatus(response.status));
         }
 
-        Ok(response.location)
+        response
+            .location
+            .ok_or_else(|| ApiError::BadStatus("Missing location data".to_string()))
     }
 }
 
 #[derive(Debug, Deserialize)]
 pub struct ApiResponse {
     pub status: String,
-    pub copyright: String,
-    pub date: String,
-    pub pano_id: String,
-    pub location: Location,
+    pub copyright: Option<String>,
+    pub date: Option<String>,
+    pub pano_id: Option<String>,
+    pub location: Option<Location>,
 }
 
 #[derive(Debug, Deserialize)]
