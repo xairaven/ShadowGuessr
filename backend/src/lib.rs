@@ -120,7 +120,7 @@ impl DataReceiver {
             if !GameCode::include_coordinates().contains(&event.code) {
                 continue;
             }
-            let last_round = event.duel.rounds.last();
+            let last_round = event.duel.state.rounds.last();
             let pano_id = match last_round {
                 None => continue,
                 Some(round) => round.panorama.decode_id()?,

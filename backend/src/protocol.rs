@@ -5,6 +5,7 @@ use thiserror::Error;
 #[derive(Debug, Deserialize)]
 pub struct GameEvent {
     pub code: GameCode,
+    #[serde(rename = "gameId")]
     pub id: String,
     pub duel: Duel,
 }
@@ -13,6 +14,9 @@ pub struct GameEvent {
 pub enum GameCode {
     DuelStarted,
     DuelNewRound,
+    // Fallback for all other events from websocket
+    #[serde(other)]
+    Other,
 }
 
 impl GameCode {
@@ -23,6 +27,11 @@ impl GameCode {
 
 #[derive(Debug, Deserialize)]
 pub struct Duel {
+    pub state: DuelState,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct DuelState {
     pub rounds: Vec<Round>,
 }
 
@@ -38,9 +47,9 @@ pub struct Panorama {
     #[serde(rename = "panoId")]
     pub id: String, // HEX
     #[serde(rename = "lat")]
-    pub latitude: f64, // Fake?
+    pub latitude: f64, // Fake coordinates
     #[serde(rename = "lng")]
-    pub longitude: f64, // Fake?
+    pub longitude: f64, // Fake coordinates
     #[serde(rename = "countryCode")]
     pub country_code: String,
     pub heading: f64,
