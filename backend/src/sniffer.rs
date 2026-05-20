@@ -37,10 +37,14 @@ impl Sniffer {
 
     pub fn read(&mut self) -> Result<String, SnifferError> {
         let mut buffer = String::new();
-        let _bytes_read = self
+        let bytes_read = self
             .reader
             .read_line(&mut buffer)
             .map_err(SnifferError::NonValidSequence)?;
+
+        if bytes_read == 0 {
+            return Err(SnifferError::ProcessTerminated);
+        }
 
         Ok(buffer)
     }
@@ -62,4 +66,7 @@ pub enum SnifferError {
 
     #[error("Failed to read line from TShark output. {0}")]
     NonValidSequence(std::io::Error),
+
+    #[error("Process terminated. 0 bytes read from reader.")]
+    ProcessTerminated,
 }
