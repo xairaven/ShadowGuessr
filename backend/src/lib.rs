@@ -1,6 +1,7 @@
-use crate::api::{ApiClient, Location};
+use crate::api::ApiClient;
 use crate::errors::BackendError;
-use crate::protocol::GameEvent;
+use crate::message::BackendMessage;
+use crate::protocol::{GameEvent, GameEventWrapper};
 use crate::sniffer::Sniffer;
 use crossbeam::channel::Sender;
 use std::sync::Arc;
@@ -9,13 +10,14 @@ use std::thread;
 
 pub mod api;
 pub mod errors;
+pub mod message;
 pub mod protocol;
 pub mod sniffer;
 
 #[derive(Debug)]
-pub struct DataReceiverBuilder {
+pub struct DataProcessorBuilder {
     error_sender: Sender<BackendError>,
-    data_sender: Sender<Location>,
+    data_sender: Sender<BackendMessage>,
     interface: String,
     keylog_path: String,
     map_api_key: String,
@@ -23,8 +25,8 @@ pub struct DataReceiverBuilder {
     exit_flag: Arc<AtomicBool>,
 }
 
-impl DataReceiverBuilder {
-    pub fn new(data_sender: Sender<Location>, exit_flag: Arc<AtomicBool>) -> Self {
+impl DataProcessorBuilder {
+    pub fn new(data_sender: Sender<BackendMessage>, exit_flag: Arc<AtomicBool>) -> Self {
         let (error_sender, _) = crossbeam::channel::unbounded();
 
         Self {
@@ -62,8 +64,8 @@ impl DataReceiverBuilder {
         }
     }
 
-    pub fn build(self) -> DataReceiver {
-        DataReceiver {
+    pub fn build(self) -> DataProcessor {
+        DataProcessor {
             data_sender: self.data_sender,
             error_sender: self.error_sender,
             api_client: ApiClient::new(self.map_api_key),
@@ -74,8 +76,8 @@ impl DataReceiverBuilder {
     }
 }
 
-pub struct DataReceiver {
-    data_sender: Sender<Location>,
+pub struct DataProcessor {
+    data_sender: Sender<BackendMessage>,
     error_sender: Sender<BackendError>,
     api_client: ApiClient,
     interface: String,
@@ -84,7 +86,7 @@ pub struct DataReceiver {
     exit_flag: Arc<AtomicBool>,
 }
 
-impl DataReceiver {
+impl DataProcessor {
     pub fn run(self) {
         thread::spawn(move || {
             let mut sniffer = match Sniffer::start(&self.interface, &self.keylog_path) {
@@ -110,24 +112,33 @@ impl DataReceiver {
                 break;
             }
             let payload = sniffer.read().map_err(BackendError::Sniffer)?;
-            let event: GameEvent = match serde_json::from_str(&payload) {
+            let event_wrapper = match serde_json::from_str::<GameEventWrapper>(&payload) {
                 Ok(event) => event,
-                Err(error) => {
-                    log::info!("Failed to parse payload: {}, error: {}", payload, error);
+                Err(_) => continue,
+            };
+            let event = match event_wrapper {
+                GameEventWrapper::Known(value) => value,
+                GameEventWrapper::Unknown(value) => {
+                    log::warn!("DETECTED Unknown event type: {}", value);
                     continue;
                 },
             };
 
-            // TODO: Log unknown types
-
-            let pano_id = match event.get_current_panorama()? {
-                Some(pano_id) => pano_id,
-                None => continue,
-            };
-            let location = self.api_client.fetch_coordinates(&pano_id)?;
-            let _ = self.data_sender.send(location);
+            self.process_current_panorama(&event)?;
         }
 
         Ok(())
+    }
+
+    fn process_current_panorama(&self, event: &GameEvent) -> Result<(), BackendError> {
+        match event.get_player_panorama()? {
+            None => Ok(()),
+            Some(panorama_id) => {
+                let location = self.api_client.fetch_coordinates(&panorama_id)?;
+                let message = BackendMessage::PlayerLocation(location);
+                let _ = self.data_sender.send(message);
+                Ok(())
+            },
+        }
     }
 }

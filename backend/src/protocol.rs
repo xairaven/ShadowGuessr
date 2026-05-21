@@ -66,7 +66,7 @@ pub enum GameEvent {
 }
 
 impl GameEvent {
-    pub fn get_current_panorama(&self) -> Result<Option<String>, ProtocolError> {
+    pub fn get_player_panorama(&self) -> Result<Option<String>, ProtocolError> {
         let duel = match &self {
             Self::DuelStarted { duel, .. } => duel,
             Self::DuelNewRound { duel, .. } => duel,
