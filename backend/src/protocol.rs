@@ -1,7 +1,14 @@
 use serde::Deserialize;
 use thiserror::Error;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, PartialEq)]
+#[serde(untagged)]
+pub enum GameEventWrapper {
+    Known(Box<GameEvent>),
+    Unknown(serde_json::Value),
+}
+
+#[derive(Debug, Deserialize, PartialEq)]
 #[serde(tag = "code")]
 pub enum GameEvent {
     #[serde(rename_all = "camelCase")]
@@ -56,10 +63,6 @@ pub enum GameEvent {
         payload: Vec<LiveStreamData>,
     },
     HeartBeat,
-
-    // For logging purposes if something unknown met
-    #[serde(untagged)]
-    UnknownEvent(serde_json::Value),
 }
 
 impl GameEvent {
@@ -80,7 +83,7 @@ impl GameEvent {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Duel {
     pub state: DuelState,
@@ -90,7 +93,7 @@ pub struct Duel {
     pub player_id: Option<serde_json::Value>, // TODO: Unknown Type
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct DuelState {
     pub game_id: String,
@@ -110,7 +113,7 @@ pub struct DuelState {
     pub is_paused: bool,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Team {
     pub id: String,
@@ -121,9 +124,10 @@ pub struct Team {
     pub current_multiplier: f64,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Player {
+    #[serde(rename = "playerId")]
     pub id: String,
     pub guesses: Vec<Guess>,
     pub rating: u32,
@@ -134,7 +138,7 @@ pub struct Player {
     pub is_steam: bool,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Round {
     pub round_number: u8,
@@ -148,7 +152,7 @@ pub struct Round {
     pub timer_start_time: Option<String>,
     pub skipped_by_player_id: Option<serde_json::Value>, // TODO: Unknown Type
 }
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, PartialEq)]
 pub struct Panorama {
     #[serde(rename = "panoId")]
     pub id: String, // HEX
@@ -170,7 +174,7 @@ impl Panorama {
     }
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct StateOptions {
     pub initial_health: u32,
@@ -200,7 +204,7 @@ pub struct StateOptions {
     pub progression_system: i32,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct MovementOptions {
     pub forbid_moving: bool,
@@ -208,7 +212,7 @@ pub struct MovementOptions {
     pub forbid_rotating: bool,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Map {
     pub name: String,
@@ -217,14 +221,14 @@ pub struct Map {
     pub max_error_distance: i32,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct MapBounds {
     pub min: Coordinates,
     pub max: Coordinates,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 pub struct Coordinates {
     #[serde(rename = "lat")]
     pub latitude: f64,
@@ -232,7 +236,7 @@ pub struct Coordinates {
     pub longitude: f64,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct RoundResult {
     pub round_number: u8,
@@ -244,7 +248,7 @@ pub struct RoundResult {
     pub multiplier: f64,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Guess {
     pub round_number: i32,
@@ -256,14 +260,14 @@ pub struct Guess {
     pub score: Option<i32>,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AwardedXp {
     pub total_awarded_xp: i32,
     pub xp_awards: Vec<serde_json::Value>, // TODO: Unknown Type
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 pub struct RatingDelta {
     #[serde(rename = "ratingBefore")]
     pub before: i32,
@@ -271,7 +275,7 @@ pub struct RatingDelta {
     pub after: i32,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ProgressChange {
     pub xp_progressions: Vec<serde_json::Value>, // TODO: Unknown Type
@@ -283,7 +287,7 @@ pub struct ProgressChange {
     pub quickplay_duels_progress: RatingDelta,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct GameResult {
     pub is_draw: bool,
@@ -291,14 +295,14 @@ pub struct GameResult {
     pub winner_style: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, PartialEq)]
 pub struct LiveStreamData {
     pub time: u64,
     #[serde(flatten)]
-    pub event: LiveStreamEvent,
+    pub event: LiveStreamEventWrapper,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 #[serde(tag = "type", content = "payload")]
 pub enum LiveStreamEvent {
     GuessWithLatLng {
@@ -344,10 +348,13 @@ pub enum LiveStreamEvent {
     Timer {
         time: f64,
     },
+}
 
-    // For logging purposes if something unknown met
-    #[serde(untagged)]
-    UnknownTelemetry(serde_json::Value),
+#[derive(Deserialize, Debug, Clone, PartialEq)]
+#[serde(untagged)]
+pub enum LiveStreamEventWrapper {
+    Known(LiveStreamEvent),
+    Unknown(serde_json::Value),
 }
 
 #[derive(Debug, Error)]
@@ -357,4 +364,278 @@ pub enum ProtocolError {
 
     #[error("Invalid UTF-8 Pano ID. {0}")]
     InvalidUtf8(std::string::FromUtf8Error),
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_live_pano_pov() {
+        let payload = r#"
+{"code":"LiveStreamSamples","playerId":"5542d49bf27d472e20a8fb34","payload":[{"time":1779315641354,"type":"PanoPov","payload":{"heading":293.46143,"pitch":-8.943378}}]}
+        "#;
+
+        let actual: GameEventWrapper = serde_json::from_str(payload).unwrap();
+        let expected = GameEventWrapper::Known(Box::new(GameEvent::LiveStreamSamples {
+            player_id: "5542d49bf27d472e20a8fb34".to_string(),
+            payload: vec![LiveStreamData {
+                time: 1779315641354,
+                event: LiveStreamEventWrapper::Known(LiveStreamEvent::PanoPov {
+                    heading: 293.46143,
+                    pitch: -8.943378,
+                }),
+            }],
+        }));
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_live_map() {
+        let payload = r#"
+        {"code":"LiveStreamSamples","playerId":"5542d49bf27d472e20a8fb34","payload":[{"time":1779315645724,"type":"MapDisplay","payload":{"isActive":true,"isSticky":false,"size":4}},{"time":1779315645752,"type":"MapBoundingBox","payload":{"north":82.515,"east":180,"south":-78.737625,"west":-180}},{"time":1779315645771,"type":"MapBoundingBox","payload":{"north":78.20225,"east":158.95335,"south":-72.295494,"west":-157.80446}},{"time":1779315645794,"type":"MapBoundingBox","payload":{"north":72.06741,"east":123.44553,"south":-63.243137,"west":-122.29664}},{"time":1779315645813,"type":"MapBoundingBox","payload":{"north":75.44777,"east":138.56273,"south":-68.21205,"west":-137.41383}},{"time":1779315645830,"type":"MapBoundingBox","payload":{"north":75.96844,"east":145.3303,"south":-68.98174,"west":-144.18141}},{"time":1779315645847,"type":"MapBoundingBox","payload":{"north":75.96844,"east":146.82443,"south":-68.98174,"west":-145.67554}}]}
+        "#;
+
+        let actual: GameEventWrapper = serde_json::from_str(payload).unwrap();
+        let expected = GameEventWrapper::Known(Box::new(GameEvent::LiveStreamSamples {
+            player_id: "5542d49bf27d472e20a8fb34".to_string(),
+            payload: vec![
+                LiveStreamData {
+                    time: 1779315645724,
+                    event: LiveStreamEventWrapper::Known(LiveStreamEvent::MapDisplay {
+                        is_active: true,
+                        is_sticky: false,
+                        size: 4,
+                    }),
+                },
+                LiveStreamData {
+                    time: 1779315645752,
+                    event: LiveStreamEventWrapper::Known(
+                        LiveStreamEvent::MapBoundingBox {
+                            north: 82.515,
+                            east: 180.0,
+                            south: -78.737625,
+                            west: -180.0,
+                        },
+                    ),
+                },
+                LiveStreamData {
+                    time: 1779315645771,
+                    event: LiveStreamEventWrapper::Known(
+                        LiveStreamEvent::MapBoundingBox {
+                            north: 78.20225,
+                            east: 158.95335,
+                            south: -72.295494,
+                            west: -157.80446,
+                        },
+                    ),
+                },
+                LiveStreamData {
+                    time: 1779315645794,
+                    event: LiveStreamEventWrapper::Known(
+                        LiveStreamEvent::MapBoundingBox {
+                            north: 72.06741,
+                            east: 123.44553,
+                            south: -63.243137,
+                            west: -122.29664,
+                        },
+                    ),
+                },
+                LiveStreamData {
+                    time: 1779315645813,
+                    event: LiveStreamEventWrapper::Known(
+                        LiveStreamEvent::MapBoundingBox {
+                            north: 75.44777,
+                            east: 138.56273,
+                            south: -68.21205,
+                            west: -137.41383,
+                        },
+                    ),
+                },
+                LiveStreamData {
+                    time: 1779315645830,
+                    event: LiveStreamEventWrapper::Known(
+                        LiveStreamEvent::MapBoundingBox {
+                            north: 75.96844,
+                            east: 145.3303,
+                            south: -68.98174,
+                            west: -144.18141,
+                        },
+                    ),
+                },
+                LiveStreamData {
+                    time: 1779315645847,
+                    event: LiveStreamEventWrapper::Known(
+                        LiveStreamEvent::MapBoundingBox {
+                            north: 75.96844,
+                            east: 146.82443,
+                            south: -68.98174,
+                            west: -145.67554,
+                        },
+                    ),
+                },
+            ],
+        }));
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_heartbeat() {
+        let payload = r#"{"code":"HeartBeat"}"#;
+
+        let actual: GameEventWrapper = serde_json::from_str(payload).unwrap();
+        let expected = GameEventWrapper::Known(Box::new(GameEvent::HeartBeat));
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_duel_started() {
+        let payload = r#"{"code":"DuelStarted","gameId":"6a0e337ddb568a66ee576488","duel":{"state":{"gameId":"6a0e337ddb568a66ee576488","gameServerNodeId":"0c870f9bace54aa49579be97cdc29e81","teams":[{"id":"140595a3-713c-4700-b5ce-410ec3d09a5a","name":"blue","health":6000,"players":[{"playerId":"67ba281ce13441ba96170b1e","guesses":[],"rating":0,"countryCode":"ua","progressChange":null,"pin":null,"helpRequested":false,"isSteam":false}],"roundResults":[],"currentMultiplier":1},{"id":"8905940e-d676-4d33-965f-44008a9290fe","name":"red","health":6000,"players":[{"playerId":"5542d49bf27d472e20a8fb34","guesses":[],"rating":461,"countryCode":"ru","progressChange":null,"pin":null,"helpRequested":false,"isSteam":false}],"roundResults":[],"currentMultiplier":1}],"rounds":[{"roundNumber":1,"panorama":{"panoId":"4E324A683732617541384A4C706A50306F4A504E3677","lat":37.826655,"lng":-122.42289,"countryCode":"","heading":329.14108534270133,"pitch":-0.18209029651973196,"zoom":0},"hasProcessedRoundTimeout":false,"isHealingRound":false,"multiplier":1,"damageMultiplier":1,"startTime":"2026-05-20T22:19:46.0746169Z","endTime":null,"timerStartTime":null,"skippedByPlayerId":null}],"currentRoundNumber":1,"status":"Ongoing","version":3,"options":{"initialHealth":6000,"individualInitialHealth":false,"initialHealthTeamOne":6000,"initialHealthTeamTwo":6000,"roundTime":15,"maxRoundTime":0,"gracePeriodTime":1,"maxNumberOfRounds":0,"healingRounds":[5],"movementOptions":{"forbidMoving":false,"forbidZooming":false,"forbidRotating":false},"mapSlug":"6983611e411dbe3f3b2a8c5b","isRated":true,"map":{"name":"A Figsy World","slug":"6983611e411dbe3f3b2a8c5b","bounds":{"min":{"lat":-54.88672138251638,"lng":-177.39450713648608},"max":{"lat":78.23591049351379,"lng":178.5434054107903}},"maxErrorDistance":18499075},"roundsWithoutDamageMultiplier":1,"multiplierIncrement":0,"roundWinMultiplierIncrement":5,"disableHealing":true,"isTeamDuels":false,"gameContext":null,"roundStartingBehavior":"Default","competitiveGameMode":"StandardDuels","countAllGuesses":false,"masterControlAutoStartRounds":false,"guessMapType":"roadmap","progressionSystem":5},"context":null,"movementOptions":{"forbidMoving":false,"forbidZooming":false,"forbidRotating":false},"mapBounds":{"min":{"lat":-54.88672138251638,"lng":-177.39450713648608},"max":{"lat":78.23591049351379,"lng":178.5434054107903}},"initialHealth":6000,"maxNumberOfRounds":0,"result":null,"isPaused":false},"pin":null,"fromPanoId":null,"location":null,"playerId":null},"timestamp":"2026-05-20T22:19:42.1772555Z"}"#;
+
+        let actual: GameEventWrapper = serde_json::from_str(payload).unwrap();
+        let expected = GameEventWrapper::Known(Box::new(GameEvent::DuelStarted {
+            game_id: "6a0e337ddb568a66ee576488".to_string(),
+            duel: Duel {
+                state: DuelState {
+                    game_id: "6a0e337ddb568a66ee576488".to_string(),
+                    game_server_node_id: "0c870f9bace54aa49579be97cdc29e81".to_string(),
+                    teams: vec![
+                        Team {
+                            id: "140595a3-713c-4700-b5ce-410ec3d09a5a".to_string(),
+                            name: "blue".to_string(),
+                            health: 6000,
+                            players: vec![Player {
+                                id: "67ba281ce13441ba96170b1e".to_string(),
+                                guesses: vec![],
+                                rating: 0,
+                                country_code: "ua".to_string(),
+                                progress_change: None,
+                                pin: None,
+                                help_requested: false,
+                                is_steam: false,
+                            }],
+                            round_results: vec![],
+                            current_multiplier: 1.0,
+                        },
+                        Team {
+                            id: "8905940e-d676-4d33-965f-44008a9290fe".to_string(),
+                            name: "red".to_string(),
+                            health: 6000,
+                            players: vec![Player {
+                                id: "5542d49bf27d472e20a8fb34".to_string(),
+                                guesses: vec![],
+                                rating: 461,
+                                country_code: "ru".to_string(),
+                                progress_change: None,
+                                pin: None,
+                                help_requested: false,
+                                is_steam: false,
+                            }],
+                            round_results: vec![],
+                            current_multiplier: 1.0,
+                        },
+                    ],
+                    rounds: vec![Round {
+                        round_number: 1,
+                        panorama: Panorama {
+                            id: "4E324A683732617541384A4C706A50306F4A504E3677"
+                                .to_string(),
+                            latitude: 37.826655,
+                            longitude: -122.42289,
+                            country_code: "".to_string(),
+                            heading: 329.14108534270133,
+                            pitch: -0.18209029651973196,
+                            zoom: 0.0,
+                        },
+                        has_processed_round_timeout: false,
+                        is_healing_round: false,
+                        multiplier: 1.0,
+                        damage_multiplier: 1.0,
+                        start_time: "2026-05-20T22:19:46.0746169Z".to_string(),
+                        end_time: None,
+                        timer_start_time: None,
+                        skipped_by_player_id: None,
+                    }],
+                    current_round_number: 1,
+                    status: "Ongoing".to_string(),
+                    version: 3,
+                    options: StateOptions {
+                        initial_health: 6000,
+                        individual_initial_health: false,
+                        initial_health_team_one: 6000,
+                        initial_health_team_two: 6000,
+                        round_time: 15,
+                        max_round_time: 0,
+                        grace_period_time: 1,
+                        max_number_of_rounds: 0,
+                        healing_rounds: vec![5],
+                        movement_options: MovementOptions {
+                            forbid_moving: false,
+                            forbid_zooming: false,
+                            forbid_rotating: false,
+                        },
+                        map_slug: "6983611e411dbe3f3b2a8c5b".to_string(),
+                        is_rated: true,
+                        map: Map {
+                            name: "A Figsy World".to_string(),
+                            slug: "6983611e411dbe3f3b2a8c5b".to_string(),
+                            bounds: MapBounds {
+                                min: Coordinates {
+                                    latitude: -54.88672138251638,
+                                    longitude: -177.39450713648608,
+                                },
+                                max: Coordinates {
+                                    latitude: 78.23591049351379,
+                                    longitude: 178.5434054107903,
+                                },
+                            },
+                            max_error_distance: 18499075,
+                        },
+                        rounds_without_damage_multiplier: 1,
+                        multiplier_increment: 0,
+                        round_win_multiplier_increment: 5,
+                        disable_healing: true,
+                        is_team_duels: false,
+                        game_context: None,
+                        round_starting_behavior: "Default".to_string(),
+                        competitive_game_mode: "StandardDuels".to_string(),
+                        count_all_guesses: false,
+                        master_control_auto_start_rounds: false,
+                        guess_map_type: "roadmap".to_string(),
+                        progression_system: 5,
+                    },
+                    context: None,
+                    movement_options: MovementOptions {
+                        forbid_moving: false,
+                        forbid_zooming: false,
+                        forbid_rotating: false,
+                    },
+                    map_bounds: MapBounds {
+                        min: Coordinates {
+                            latitude: -54.88672138251638,
+                            longitude: -177.39450713648608,
+                        },
+                        max: Coordinates {
+                            latitude: 78.23591049351379,
+                            longitude: 178.5434054107903,
+                        },
+                    },
+                    initial_health: 6000,
+                    max_number_of_rounds: 0,
+                    result: None,
+                    is_paused: false,
+                },
+                pin: None,
+                from_pano_id: None,
+                location: None,
+                player_id: None,
+            },
+            timestamp: "2026-05-20T22:19:42.1772555Z".to_string(),
+        }));
+
+        assert_eq!(actual, expected);
+    }
 }
