@@ -1,6 +1,6 @@
 use crate::api::{ApiClient, Location};
 use crate::errors::BackendError;
-use crate::protocol::{GameCode, GameEvent};
+use crate::protocol::GameEvent;
 use crate::sniffer::Sniffer;
 use crossbeam::channel::Sender;
 use std::sync::Arc;
@@ -117,13 +117,12 @@ impl DataReceiver {
                     continue;
                 },
             };
-            if !GameCode::include_coordinates().contains(&event.code) {
-                continue;
-            }
-            let last_round = event.duel.state.rounds.last();
-            let pano_id = match last_round {
+
+            // TODO: Log unknown types
+
+            let pano_id = match event.get_current_panorama()? {
+                Some(pano_id) => pano_id,
                 None => continue,
-                Some(round) => round.panorama.decode_id()?,
             };
             let location = self.api_client.fetch_coordinates(&pano_id)?;
             let _ = self.data_sender.send(location);
