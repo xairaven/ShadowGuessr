@@ -1,7 +1,9 @@
-use crate::api::ApiClient;
+use crate::api::{ApiClient, Location};
 use crate::errors::BackendError;
 use crate::message::BackendMessage;
-use crate::protocol::{GameEvent, GameEventWrapper};
+use crate::protocol::{
+    GameEvent, GameEventWrapper, LiveStreamEvent, LiveStreamEventWrapper,
+};
 use crate::sniffer::Sniffer;
 use crossbeam::channel::Sender;
 use std::sync::Arc;
@@ -72,6 +74,7 @@ impl DataProcessorBuilder {
             interface: self.interface,
             keylog_path: self.keylog_path,
             exit_flag: self.exit_flag,
+            my_player_id: None,
         }
     }
 }
@@ -82,12 +85,14 @@ pub struct DataProcessor {
     api_client: ApiClient,
     interface: String,
     keylog_path: String,
-
     exit_flag: Arc<AtomicBool>,
+
+    // Tracks the current user ID to filter incoming telemetry streams
+    my_player_id: Option<String>,
 }
 
 impl DataProcessor {
-    pub fn run(self) {
+    pub fn run(mut self) {
         thread::spawn(move || {
             let mut sniffer = match Sniffer::start(&self.interface, &self.keylog_path) {
                 Ok(value) => value,
@@ -106,7 +111,7 @@ impl DataProcessor {
         });
     }
 
-    fn worker_loop(&self, sniffer: &mut Sniffer) -> Result<(), BackendError> {
+    fn worker_loop(&mut self, sniffer: &mut Sniffer) -> Result<(), BackendError> {
         loop {
             if self.exit_flag.load(Ordering::Relaxed) {
                 break;
@@ -117,28 +122,80 @@ impl DataProcessor {
                 Err(_) => continue,
             };
             let event = match event_wrapper {
-                GameEventWrapper::Known(value) => value,
+                GameEventWrapper::Known(value) => *value,
                 GameEventWrapper::Unknown(value) => {
                     log::warn!("DETECTED Unknown event type: {}", value);
                     continue;
                 },
             };
 
-            self.process_current_panorama(&event)?;
+            self.process_event(event)?;
         }
 
         Ok(())
     }
 
-    fn process_current_panorama(&self, event: &GameEvent) -> Result<(), BackendError> {
-        match event.get_player_panorama()? {
-            None => Ok(()),
-            Some(panorama_id) => {
-                let location = self.api_client.fetch_coordinates(&panorama_id)?;
-                let message = BackendMessage::PlayerLocation(location);
-                let _ = self.data_sender.send(message);
-                Ok(())
-            },
+    fn process_event(&mut self, event: GameEvent) -> Result<(), BackendError> {
+        // Attempt to extract new coordinates whenever round data updates
+        if let Ok(Some(panorama_id)) = event.get_player_panorama() {
+            let location = self.api_client.fetch_coordinates(&panorama_id)?;
+            let message = BackendMessage::PlayerLocation(location);
+            let _ = self.data_sender.send(message);
         }
+
+        match event {
+            GameEvent::SubscribeToLiveStream { player_id, .. } => {
+                // Save the identity upon connection to the lobby stream
+                self.my_player_id = Some(player_id);
+            },
+            GameEvent::LiveStreamSamples { player_id, payload } => {
+                let is_me = Some(&player_id) == self.my_player_id.as_ref();
+
+                for data in payload {
+                    let telemetry = match data.event {
+                        LiveStreamEventWrapper::Known(telemetry) => telemetry,
+                        LiveStreamEventWrapper::Unknown(value) => {
+                            log::warn!("DETECTED Unknown telemetry type: {}", value);
+                            continue;
+                        },
+                    };
+
+                    match telemetry {
+                        LiveStreamEvent::MapBoundingBox {
+                            north,
+                            east,
+                            south,
+                            west,
+                        } if is_me => {
+                            // Forward map bounds adjustments initiated by the user
+                            let message = BackendMessage::MapSync {
+                                north,
+                                east,
+                                south,
+                                west,
+                            };
+                            let _ = self.data_sender.send(message);
+                        },
+                        LiveStreamEvent::PinPosition {
+                            latitude,
+                            longitude,
+                        } if !is_me => {
+                            // Forward marker placements made by the opponent
+                            let location = Location {
+                                latitude,
+                                longitude,
+                            };
+                            let _ = self
+                                .data_sender
+                                .send(BackendMessage::OpponentPin(location));
+                        },
+                        _ => {},
+                    }
+                }
+            },
+            _ => {},
+        }
+
+        Ok(())
     }
 }
