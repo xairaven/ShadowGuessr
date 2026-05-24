@@ -9,6 +9,9 @@ use thiserror::Error;
 pub struct Config {
     pub log_level: LogLevel,
     pub theme: Theme,
+    pub map_api_key: String,
+    pub interface: String,
+    pub keylog_path: String,
 }
 
 impl Default for Config {
@@ -16,6 +19,10 @@ impl Default for Config {
         Self {
             log_level: LogLevel::default(),
             theme: Theme::Dark,
+            map_api_key: String::new(),
+            interface: "any".to_string(),
+            // Default ProtonGE/Wine SSL keylog path for Steam games on Linux
+            keylog_path: "/tmp/shadow_keys.log".to_string(),
         }
     }
 }
