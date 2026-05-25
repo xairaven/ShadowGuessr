@@ -357,6 +357,14 @@ pub enum LiveStreamEventWrapper {
     Unknown(serde_json::Value),
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct MapBoundaries {
+    pub north: f64,
+    pub east: f64,
+    pub south: f64,
+    pub west: f64,
+}
+
 #[derive(Debug, Error)]
 pub enum ProtocolError {
     #[error("Invalid HEX Pano ID. {0}")]

@@ -2,7 +2,7 @@ use crate::api::{ApiClient, Location};
 use crate::errors::BackendError;
 use crate::message::BackendMessage;
 use crate::protocol::{
-    GameEvent, GameEventWrapper, LiveStreamEvent, LiveStreamEventWrapper,
+    GameEvent, GameEventWrapper, LiveStreamEvent, LiveStreamEventWrapper, MapBoundaries,
 };
 use crate::sniffer::Sniffer;
 use crossbeam::channel::Sender;
@@ -144,6 +144,15 @@ impl DataProcessor {
         }
 
         match event {
+            GameEvent::DuelStarted { duel, .. }
+            | GameEvent::DuelNewRound { duel, .. }
+            | GameEvent::DuelFinished { duel, .. } => {
+                // Pass state update
+                let _ = self
+                    .data_sender
+                    .send(BackendMessage::GameStateUpdate(Box::new(duel.state)));
+            },
+
             GameEvent::SubscribeToLiveStream { player_id, .. } => {
                 // Save the identity upon connection to the lobby stream
                 self.my_player_id = Some(player_id);
@@ -168,12 +177,12 @@ impl DataProcessor {
                             west,
                         } if is_me => {
                             // Forward map bounds adjustments initiated by the user
-                            let message = BackendMessage::MapSync {
+                            let message = BackendMessage::MapSync(MapBoundaries {
                                 north,
                                 east,
                                 south,
                                 west,
-                            };
+                            });
                             let _ = self.data_sender.send(message);
                         },
                         LiveStreamEvent::PinPosition {
