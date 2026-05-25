@@ -18,7 +18,7 @@ impl AppCreator {
         Self::set_theme(cc, &config);
 
         let context = Context::new(config);
-        let workspace = Workspace::new(&context);
+        let workspace = Workspace::new(&context, cc.egui_ctx.clone());
 
         Self {
             context,
