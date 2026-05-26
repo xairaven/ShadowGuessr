@@ -117,9 +117,16 @@ impl DataProcessor {
                 break;
             }
             let payload = sniffer.read().map_err(BackendError::Sniffer)?;
-            let event_wrapper = match serde_json::from_str::<GameEventWrapper>(&payload) {
+            let payload = payload.trim();
+            if payload.is_empty() {
+                continue;
+            }
+            let event_wrapper = match serde_json::from_str::<GameEventWrapper>(payload) {
                 Ok(event) => event,
-                Err(_) => continue,
+                Err(error) => {
+                    log::debug!("Failed to parse: {}", error);
+                    continue;
+                },
             };
             let event = match event_wrapper {
                 GameEventWrapper::Known(value) => *value,
