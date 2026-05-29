@@ -116,12 +116,34 @@ impl DataProcessor {
             if self.exit_flag.load(Ordering::Relaxed) {
                 break;
             }
-            let payload = sniffer.read().map_err(BackendError::Sniffer)?;
-            let payload = payload.trim();
-            if payload.is_empty() {
+            let line = sniffer.read().map_err(BackendError::Sniffer)?;
+            let line = line.trim();
+            if line.is_empty() {
                 continue;
             }
-            let event_wrapper = match serde_json::from_str::<GameEventWrapper>(payload) {
+
+            let parts: Vec<&str> = line.split(',').collect();
+            let text_payload = parts.first().copied().unwrap_or("");
+            let raw_payload = parts.get(1).copied().unwrap_or("");
+            let masking_key = parts.get(2).copied().unwrap_or("");
+
+            // Deciding what JSON we will parse
+            let json_str = if !text_payload.is_empty() {
+                // Incoming traffic (from the server) is already in plain text
+                text_payload.to_string()
+            } else if !raw_payload.is_empty()
+                && !masking_key.is_empty()
+                && let Ok(unmasked) =
+                    Sniffer::unmask_websocket_payload(raw_payload, masking_key)
+            {
+                // Outcoming traffic (from the player), decoding
+                unmasked
+            } else {
+                continue;
+            };
+
+            let event_wrapper = match serde_json::from_str::<GameEventWrapper>(&json_str)
+            {
                 Ok(event) => event,
                 Err(error) => {
                     log::debug!("Failed to parse: {}", error);

@@ -14,9 +14,12 @@ impl Sniffer {
                 "-l", // Line-buffered
                 "-i", interface, // Interface
                 "-o", &format!("tls.keylog_file:{}", keylog_path), // Path to the file with TLS keys
-                "-Y", "websocket and tcp.srcport == 443", // Filter: Only income websockets
+                "-Y", "websocket and tcp.port == 443", // Filter: Only income websockets
                 "-T", "fields",                           // Format: Specific fields
-                "-e", "websocket.payload.text",           // Fields: Clear JSON
+                "-e", "websocket.payload.text",           // Fields: Clear JSON (for incoming)
+                "-e", "websocket.payload",      // Raw bytes (for outcoming)
+                "-e", "websocket.masking_key",  // Masking key (for outcoming)
+                "-E", "separator=,",            // Separator for convenient parsing
             ])
             .stdout(Stdio::piped())
             .stderr(Stdio::null()) // Ignoring technical spam
@@ -52,6 +55,35 @@ impl Sniffer {
     pub fn wait_child(&mut self) {
         let _ = self.child.wait(); // Waiting for process end, if it will fail
     }
+
+    /// Decrypting outcome WebSocket Payload by RFC 6455
+    pub fn unmask_websocket_payload(
+        payload_hex: &str, mask_hex: &str,
+    ) -> Result<String, SnifferError> {
+        // TShark often outputs hex with colons (e.g., "1a:2b:3c"), so we need to remove them before decoding
+        let clean_payload = payload_hex.replace(":", "");
+        let clean_mask = mask_hex.replace(":", "");
+
+        // Decoding HEX-Strings into bytes vec
+        let payload_bytes =
+            hex::decode(&clean_payload).map_err(SnifferError::HexDecode)?;
+        let mask_bytes = hex::decode(&clean_mask).map_err(SnifferError::HexDecode)?;
+
+        if mask_bytes.len() != 4 {
+            return Err(SnifferError::MaskingKeyLength(mask_bytes.len()));
+        }
+
+        // Using XOR-mask
+        #[allow(clippy::indexing_slicing)]
+        let unmasked_bytes: Vec<u8> = payload_bytes
+            .into_iter()
+            .enumerate()
+            .map(|(i, byte)| byte ^ mask_bytes[i % 4])
+            .collect();
+
+        // Trying to get json from possibly decoded bytes
+        String::from_utf8(unmasked_bytes).map_err(|_| SnifferError::DecodingWithMask)
+    }
 }
 
 #[derive(Debug, Error)]
@@ -69,4 +101,13 @@ pub enum SnifferError {
 
     #[error("Process terminated. 0 bytes read from reader.")]
     ProcessTerminated,
+
+    #[error("Failed to decode input from HEX to bytes. {0}")]
+    HexDecode(hex::FromHexError),
+
+    #[error("Masking key must be exactly 4 bytes. Provided mask length: {0}")]
+    MaskingKeyLength(usize),
+
+    #[error("Failed to convert 'decoded' payload with mask into Json String.")]
+    DecodingWithMask,
 }
