@@ -1,6 +1,7 @@
 use crate::config::ConfigError;
 use crate::logs::LogsError;
 use crate::ui::GraphicsBackendError;
+use backend::errors::BackendError;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -13,4 +14,7 @@ pub enum ClientError {
 
     #[error("Logger. {0}")]
     Logs(#[from] LogsError),
+
+    #[error("Backend. {0}")]
+    Backend(#[from] BackendError),
 }

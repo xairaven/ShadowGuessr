@@ -20,7 +20,7 @@ pub struct Context {
 
     // Backend communication
     pub data_rx: Receiver<BackendMessage>,
-    pub data_tx: Option<Sender<BackendMessage>>,
+    pub data_tx: Sender<BackendMessage>,
     pub exit_flag: Arc<AtomicBool>,
 }
 
@@ -40,7 +40,7 @@ impl Context {
             errors_tx,
             errors_rx,
             data_rx,
-            data_tx: Some(data_tx),
+            data_tx,
             exit_flag,
         }
     }

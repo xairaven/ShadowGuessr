@@ -1,8 +1,11 @@
 use crate::context::Context;
+use crate::errors::ClientError;
 use crate::ui::map::pin::{MapPin, MapPins};
 use backend::api::Location;
+use backend::errors::BackendError;
 use backend::message::BackendMessage;
 use backend::protocol::{DuelState, MapBoundaries};
+use crossbeam::channel::{Receiver, Sender};
 use egui::DragPanButtons;
 use walkers::sources::OpenStreetMap;
 use walkers::{HttpTiles, MapMemory, Position};
@@ -19,10 +22,16 @@ pub struct MainPage {
     opponent_pin: Option<Location>,
     map_bounds: Option<MapBoundaries>,
     game_state: Option<Box<DuelState>>,
+
+    // Error channels
+    backend_error_tx: Sender<BackendError>,
+    backend_error_rx: Receiver<BackendError>,
 }
 
 impl MainPage {
     pub fn new(egui_context: egui::Context) -> Self {
+        let (backend_error_tx, backend_error_rx) = crossbeam::channel::unbounded();
+
         Self {
             is_running: false,
 
@@ -33,6 +42,9 @@ impl MainPage {
             opponent_pin: None,
             map_bounds: None,
             game_state: None,
+
+            backend_error_tx,
+            backend_error_rx,
         }
     }
 
@@ -48,29 +60,41 @@ impl MainPage {
         egui::CentralPanel::default().show_inside(ui, |ui| {
             self.show_map(ui);
         });
+
+        while let Ok(err) = self.backend_error_rx.recv() {
+            let _ = context.errors_tx.try_send(ClientError::Backend(err));
+        }
     }
 
     fn show_hud(&mut self, ui: &mut egui::Ui, context: &mut Context) {
         ui.heading("ShadowGuessr Intel");
         ui.add_space(20.0);
 
-        ui.vertical_centered_justified(|ui| {
-            match self.is_running {
-                false => {
-                    if ui.button("START SNIFFER").clicked() {
-                        // TODO: Call DataProcessorBuilder here
-                        self.is_running = true;
-                    }
-                },
-                true => {
-                    if ui.button("STOP SNIFFER").clicked() {
-                        context
-                            .exit_flag
-                            .store(true, std::sync::atomic::Ordering::Relaxed);
-                        self.is_running = false;
-                    }
-                },
-            }
+        ui.vertical_centered_justified(|ui| match self.is_running {
+            false => {
+                if ui.button("START SNIFFER").clicked() {
+                    backend::DataProcessorBuilder::new(
+                        context.data_tx.clone(),
+                        context.exit_flag.clone(),
+                    )
+                    .with_error_sender(self.backend_error_tx.clone())
+                    .with_interface(context.settings.interface.clone())
+                    .with_keylog_path(context.settings.keylog_path.clone())
+                    .with_map_api_key(context.settings.map_api_key.clone())
+                    .build()
+                    .run();
+
+                    self.is_running = true;
+                }
+            },
+            true => {
+                if ui.button("STOP SNIFFER").clicked() {
+                    context
+                        .exit_flag
+                        .store(true, std::sync::atomic::Ordering::Relaxed);
+                    self.is_running = false;
+                }
+            },
         });
 
         ui.add_space(20.0);
