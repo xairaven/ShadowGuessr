@@ -12,8 +12,8 @@ pub struct Ui {
 impl Default for Ui {
     fn default() -> Self {
         Self {
-            min_width: 950.0,
-            min_height: 550.0,
+            min_width: 550.0,
+            min_height: 275.0,
         }
     }
 }
