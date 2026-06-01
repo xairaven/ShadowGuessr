@@ -172,6 +172,9 @@ impl SettingsPage {
     }
 
     fn save(&self, context: &mut Context) {
+        context.settings.interface = self.interface.clone();
+        context.settings.map_api_key = self.map_api_key.clone();
+        context.settings.keylog_path = self.keylog_path.clone();
         context.settings.log_level = self.log_level;
         context.settings.theme = self.theme;
         context.save_settings();
