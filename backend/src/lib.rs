@@ -124,13 +124,13 @@ impl DataProcessor {
                 continue;
             }
 
-            let parts: Vec<&str> = line.split(',').collect();
+            let parts: Vec<&str> = line.split('|').collect();
             let text_payload = parts.first().copied().unwrap_or("");
             let raw_payload = parts.get(1).copied().unwrap_or("");
             let masking_key = parts.get(2).copied().unwrap_or("");
 
             log::info!(
-                "Received payload: {} | {} | {}",
+                "Received payload. TEXT: {}\nRAW: {}\nMASKING: {}",
                 text_payload,
                 raw_payload,
                 masking_key

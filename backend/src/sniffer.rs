@@ -19,7 +19,7 @@ impl Sniffer {
                 "-e", "websocket.payload.text",           // Fields: Clear JSON (for incoming)
                 "-e", "websocket.payload",      // Raw bytes (for outcoming)
                 "-e", "websocket.masking_key",  // Masking key (for outcoming)
-                "-E", "separator=,",            // Separator for convenient parsing
+                "-E", "separator=|",            // Separator for convenient parsing
             ])
             .stdout(Stdio::piped())
             .stderr(Stdio::null()) // Ignoring technical spam
