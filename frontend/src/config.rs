@@ -1,8 +1,8 @@
 use crate::errors::ClientError;
 use crate::logs::LogLevel;
-use egui::Theme;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
+use strum_macros::{Display, EnumIter};
 use thiserror::Error;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -80,4 +80,21 @@ pub enum ConfigError {
 
     #[error("I/O. {0}")]
     IO(#[from] std::io::Error),
+}
+
+#[derive(Debug, Copy, Clone, EnumIter, PartialEq, Display, Serialize, Deserialize)]
+pub enum Theme {
+    Dark,
+    Light,
+    System,
+}
+
+impl From<&Theme> for egui::Theme {
+    fn from(value: &Theme) -> Self {
+        match value {
+            Theme::Dark => Self::Dark,
+            Theme::Light => Self::Light,
+            Theme::System => Self::Light,
+        }
+    }
 }

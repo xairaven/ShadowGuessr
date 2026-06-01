@@ -1,0 +1,159 @@
+use crate::context::Context;
+use crate::ui::map::pin::{MapPin, MapPins};
+use backend::api::Location;
+use backend::message::BackendMessage;
+use backend::protocol::{DuelState, MapBoundaries};
+use egui::DragPanButtons;
+use walkers::sources::OpenStreetMap;
+use walkers::{HttpTiles, MapMemory, Position};
+
+pub struct MainPage {
+    is_running: bool,
+
+    // Map State
+    tiles: HttpTiles,
+    map_memory: MapMemory,
+
+    // Backend data
+    player_location: Option<Location>,
+    opponent_pin: Option<Location>,
+    map_bounds: Option<MapBoundaries>,
+    game_state: Option<Box<DuelState>>,
+}
+
+impl MainPage {
+    pub fn new(egui_context: egui::Context) -> Self {
+        Self {
+            is_running: false,
+
+            tiles: HttpTiles::new(OpenStreetMap, egui_context),
+            map_memory: MapMemory::default(),
+
+            player_location: None,
+            opponent_pin: None,
+            map_bounds: None,
+            game_state: None,
+        }
+    }
+
+    pub fn show(&mut self, ui: &mut egui::Ui, context: &mut Context) {
+        self.poll_backend(ui, context);
+
+        egui::Panel::left("HUD_PANEL")
+            .exact_size(250.0)
+            .show_inside(ui, |ui| {
+                self.show_hud(ui, context);
+            });
+
+        egui::CentralPanel::default().show_inside(ui, |ui| {
+            self.show_map(ui);
+        });
+    }
+
+    fn show_hud(&mut self, ui: &mut egui::Ui, context: &mut Context) {
+        ui.heading("ShadowGuessr Intel");
+        ui.add_space(20.0);
+
+        ui.add_enabled_ui(!self.is_running, |ui| {
+            if ui.button("START SNIFFER").clicked() {
+                // TODO: Call DataProcessorBuilder here
+                self.is_running = true;
+            }
+        });
+
+        ui.add_space(20.0);
+
+        // Match stats
+        if let Some(state) = &self.game_state {
+            ui.label(
+                egui::RichText::new(format!("Round: {}", state.current_round_number))
+                    .strong()
+                    .size(18.0),
+            );
+            ui.add_space(10.0);
+
+            for team in &state.teams {
+                ui.label(format!(
+                    "Team {}: {} HP",
+                    team.name.to_uppercase(),
+                    team.health
+                ));
+                ui.label(format!("Multiplier: {}x", team.current_multiplier));
+                ui.add_space(5.0);
+            }
+        } else {
+            ui.label("Waiting for duel to start...");
+        }
+
+        // Navigation
+        ui.vertical_centered_justified(|ui| {
+            if ui.button("Settings").clicked() {
+                context.ui_state.switch_to_settings();
+            }
+            if ui.button("Info").clicked() {
+                context.ui_state.switch_to_info();
+            }
+        });
+    }
+
+    fn show_map(&mut self, ui: &mut egui::Ui) {
+        let mut pins = MapPins::default();
+
+        if let Some(location) = &self.player_location {
+            pins.add(MapPin::player_pin(location));
+        }
+        if let Some(location) = &self.opponent_pin {
+            pins.add(MapPin::opponent_pin(location));
+        }
+
+        let map = walkers::Map::new(
+            Some(&mut self.tiles),
+            &mut self.map_memory,
+            Position::new(0.0, 0.0),
+        )
+        .with_plugin(pins)
+        .zoom_with_ctrl(true)
+        .drag_pan_buttons(DragPanButtons::PRIMARY | DragPanButtons::SECONDARY);
+
+        ui.add(map);
+    }
+
+    fn poll_backend(&mut self, ui: &mut egui::Ui, context: &mut Context) {
+        let mut needs_repaint = false;
+
+        while let Ok(message) = context.data_rx.try_recv() {
+            match message {
+                BackendMessage::PlayerLocation(location) => {
+                    self.player_location = Some(location);
+                },
+                BackendMessage::OpponentPin(location) => {
+                    self.opponent_pin = Some(location);
+                },
+                BackendMessage::MapSync(bounds) => {
+                    // Center of rectangle
+                    let center_lat = (bounds.north + bounds.south) / 2.0;
+                    let center_lng = (bounds.east + bounds.west) / 2.0;
+
+                    let center = walkers::lat_lon(center_lat, center_lng);
+                    self.map_memory.center_at(center);
+
+                    self.map_bounds = Some(bounds);
+                },
+                BackendMessage::GameStateUpdate(duel) => {
+                    // If it's the first round -> delete pins
+                    if duel.current_round_number == 1 {
+                        self.player_location = None;
+                        self.opponent_pin = None;
+                    }
+                    self.game_state = Some(duel);
+                },
+            }
+
+            needs_repaint = true;
+        }
+
+        if needs_repaint {
+            ui.ctx().request_repaint();
+        }
+    }
+}

@@ -5,9 +5,22 @@ use log::LevelFilter;
 use o2o::o2o;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
+use strum_macros::{Display, EnumIter};
 use thiserror::Error;
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, o2o)]
+#[derive(
+    Debug,
+    Default,
+    Clone,
+    Copy,
+    EnumIter,
+    Display,
+    PartialEq,
+    Eq,
+    Serialize,
+    Deserialize,
+    o2o,
+)]
 #[o2o(map_owned(log::LevelFilter))]
 pub enum LogLevel {
     #[default]

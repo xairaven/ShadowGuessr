@@ -64,4 +64,9 @@ pub enum GraphicsBackendError {
 
 pub mod creator;
 pub mod modals;
+pub mod pages;
 pub mod workspace;
+
+pub mod map {
+    pub mod pin;
+}

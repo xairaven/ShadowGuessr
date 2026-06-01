@@ -28,7 +28,7 @@ impl AppCreator {
     }
 
     fn set_theme(cc: &eframe::CreationContext<'_>, config: &Config) {
-        cc.egui_ctx.set_theme(config.theme);
+        cc.egui_ctx.set_theme(egui::Theme::from(&config.theme));
     }
 
     fn set_fonts(cc: &eframe::CreationContext<'_>) {
