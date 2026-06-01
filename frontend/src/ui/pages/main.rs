@@ -54,10 +54,22 @@ impl MainPage {
         ui.heading("ShadowGuessr Intel");
         ui.add_space(20.0);
 
-        ui.add_enabled_ui(!self.is_running, |ui| {
-            if ui.button("START SNIFFER").clicked() {
-                // TODO: Call DataProcessorBuilder here
-                self.is_running = true;
+        ui.vertical_centered_justified(|ui| {
+            match self.is_running {
+                false => {
+                    if ui.button("START SNIFFER").clicked() {
+                        // TODO: Call DataProcessorBuilder here
+                        self.is_running = true;
+                    }
+                },
+                true => {
+                    if ui.button("STOP SNIFFER").clicked() {
+                        context
+                            .exit_flag
+                            .store(true, std::sync::atomic::Ordering::Relaxed);
+                        self.is_running = false;
+                    }
+                },
             }
         });
 
@@ -84,6 +96,8 @@ impl MainPage {
         } else {
             ui.label("Waiting for duel to start...");
         }
+
+        ui.add_space(20.0);
 
         // Navigation
         ui.vertical_centered_justified(|ui| {
