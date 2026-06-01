@@ -4,7 +4,7 @@ version = "0.0.1"
 authors = ["Oleksandr Kovalov <oleksandr.kovalov.work@gmail.com>"]
 
 edition = "2024"
-rust-version = "1.95"
+rust-version = "1.96"
 
 categories = ["games"]
 
