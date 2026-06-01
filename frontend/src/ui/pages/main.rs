@@ -134,6 +134,8 @@ impl MainPage {
         });
     }
 
+    const KYIV_LATITUDE: f64 = 30.5234;
+    const KYIV_LONGITUDE: f64 = 50.4501;
     fn show_map(&mut self, ui: &mut egui::Ui) {
         let mut pins = MapPins::default();
 
@@ -147,10 +149,10 @@ impl MainPage {
         let map = walkers::Map::new(
             Some(&mut self.tiles),
             &mut self.map_memory,
-            Position::new(0.0, 0.0),
+            Position::new(Self::KYIV_LATITUDE, Self::KYIV_LONGITUDE),
         )
         .with_plugin(pins)
-        .zoom_with_ctrl(true)
+        .zoom_with_ctrl(false)
         .drag_pan_buttons(DragPanButtons::PRIMARY | DragPanButtons::SECONDARY);
 
         ui.add(map);
