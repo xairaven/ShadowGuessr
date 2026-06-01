@@ -97,6 +97,7 @@ impl DataProcessor {
             let mut sniffer = match Sniffer::start(&self.interface, &self.keylog_path) {
                 Ok(value) => value,
                 Err(error) => {
+                    log::error!("Failed to start sniffer: {}", error);
                     let _ = self.error_sender.send(BackendError::Sniffer(error));
                     return;
                 },
@@ -104,6 +105,7 @@ impl DataProcessor {
 
             let work_result = self.worker_loop(&mut sniffer);
             if let Err(error) = work_result {
+                log::error!("{}", error);
                 let _ = self.error_sender.send(error);
             }
 
@@ -126,6 +128,13 @@ impl DataProcessor {
             let text_payload = parts.first().copied().unwrap_or("");
             let raw_payload = parts.get(1).copied().unwrap_or("");
             let masking_key = parts.get(2).copied().unwrap_or("");
+
+            log::info!(
+                "Received payload: {} | {} | {}",
+                text_payload,
+                raw_payload,
+                masking_key
+            );
 
             // Deciding what JSON we will parse
             let json_str = if !text_payload.is_empty() {

@@ -165,9 +165,11 @@ impl MainPage {
             match message {
                 BackendMessage::PlayerLocation(location) => {
                     self.player_location = Some(location);
+                    log::info!("Got player location: {:?}", self.player_location);
                 },
                 BackendMessage::OpponentPin(location) => {
                     self.opponent_pin = Some(location);
+                    log::info!("Got opponent ping: {:?}", self.opponent_pin);
                 },
                 BackendMessage::MapSync(bounds) => {
                     // Center of rectangle
