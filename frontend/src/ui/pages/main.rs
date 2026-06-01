@@ -61,7 +61,7 @@ impl MainPage {
             self.show_map(ui);
         });
 
-        while let Ok(err) = self.backend_error_rx.recv() {
+        while let Ok(err) = self.backend_error_rx.try_recv() {
             let _ = context.errors_tx.try_send(ClientError::Backend(err));
         }
     }
