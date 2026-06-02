@@ -177,11 +177,11 @@ impl DataProcessor {
 
     fn process_event(&mut self, event: GameEvent) -> Result<(), BackendError> {
         // Attempt to extract new coordinates whenever round data updates
+        let mut new_location = None;
         if let Ok(Some(panorama_id)) = event.get_player_panorama()
             && let Some(location) = self.api_client.fetch_coordinates(&panorama_id)?
         {
-            let message = BackendMessage::PlayerLocation(location);
-            let _ = self.data_sender.send(message);
+            new_location = Some(location);
         }
 
         match event {
@@ -244,6 +244,12 @@ impl DataProcessor {
                 }
             },
             _ => {},
+        }
+
+        // Send location after game state update
+        if let Some(location) = new_location {
+            let message = BackendMessage::PlayerLocation(location);
+            let _ = self.data_sender.send(message);
         }
 
         Ok(())
