@@ -58,6 +58,12 @@ pub enum GameEvent {
         timestamp: String,
     },
     #[serde(rename_all = "camelCase")]
+    DuelReplaceRoundPanorama {
+        game_id: String,
+        duel: Duel,
+        timestamp: String,
+    },
+    #[serde(rename_all = "camelCase")]
     LiveStreamSamples {
         player_id: String,
         payload: Vec<LiveStreamData>,
@@ -227,6 +233,7 @@ impl Panorama {
 #[derive(Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct StateOptions {
+    // pub allow_spectators: bool, // IDK if this is needed
     pub initial_health: u32,
     pub individual_initial_health: bool,
     pub initial_health_team_one: u32,
