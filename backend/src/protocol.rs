@@ -63,6 +63,52 @@ pub enum GameEvent {
         payload: Vec<LiveStreamData>,
     },
     HeartBeat,
+    Subscribe {
+        topic: String,
+        client: String,
+    },
+    Unsubscribe {
+        topic: String,
+        client: String,
+    },
+    Subscribed {
+        topic: String,
+        level: String,
+    },
+    SubscribeToMatchmaking {
+        topic: String,
+        client: String,
+        payload: MatchmakingSubscribe,
+    },
+    #[serde(rename_all = "camelCase")]
+    MatchmakingJoined {
+        topic: String,
+        client: String,
+        timestamp: String,
+        access_token: Option<String>,
+        payload: MatchmakingJoinInfo,
+    },
+    #[serde(rename_all = "camelCase")]
+    MatchmakingMatched {
+        topic: String,
+        client: String,
+        timestamp: String,
+        access_token: Option<String>,
+        payload: MatchmakingMatchInfo,
+    },
+    ChatEmote {
+        client: String,
+        topic: String,
+        payload: String, // Emoji
+    },
+    #[serde(rename_all = "camelCase")]
+    ChatMessage {
+        topic: String,
+        client: String,
+        timestamp: String,
+        access_token: Option<String>,
+        payload: ChatMessageInfo,
+    },
 }
 
 impl GameEvent {
@@ -87,10 +133,10 @@ impl GameEvent {
 #[serde(rename_all = "camelCase")]
 pub struct Duel {
     pub state: DuelState,
-    pub pin: Option<Coordinates>, // TODO: Unknown Type
-    pub from_pano_id: Option<serde_json::Value>, // TODO: Unknown Type
-    pub location: Option<serde_json::Value>, // TODO: Unknown Type
-    pub player_id: Option<serde_json::Value>, // TODO: Unknown Type
+    pub pin: Option<Coordinates>, // WARN: Unknown Type
+    pub from_pano_id: Option<serde_json::Value>, // WARN: Unknown Type
+    pub location: Option<serde_json::Value>, // WARN: Unknown Type
+    pub player_id: Option<serde_json::Value>, // WARN: Unknown Type
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
@@ -104,7 +150,7 @@ pub struct DuelState {
     pub status: String,
     pub version: i32,
     pub options: StateOptions,
-    pub context: Option<serde_json::Value>, // TODO: Unknown Type
+    pub context: Option<serde_json::Value>, // WARN: Unknown Type
     pub movement_options: MovementOptions,
     pub map_bounds: MapBounds,
     pub initial_health: u32,
@@ -150,7 +196,7 @@ pub struct Round {
     pub start_time: String,
     pub end_time: Option<String>,
     pub timer_start_time: Option<String>,
-    pub skipped_by_player_id: Option<serde_json::Value>, // TODO: Unknown Type
+    pub skipped_by_player_id: Option<serde_json::Value>, // WARN: Unknown Type
 }
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct Panorama {
@@ -195,7 +241,7 @@ pub struct StateOptions {
     pub round_win_multiplier_increment: i32,
     pub disable_healing: bool,
     pub is_team_duels: bool,
-    pub game_context: Option<serde_json::Value>, // TODO: Unknown Type
+    pub game_context: Option<serde_json::Value>, // WARN: Unknown Type
     pub round_starting_behavior: String,
     pub competitive_game_mode: String,
     pub count_all_guesses: bool,
@@ -264,7 +310,7 @@ pub struct Guess {
 #[serde(rename_all = "camelCase")]
 pub struct AwardedXp {
     pub total_awarded_xp: i32,
-    pub xp_awards: Vec<serde_json::Value>, // TODO: Unknown Type
+    pub xp_awards: Vec<serde_json::Value>, // WARN: Unknown Type
 }
 
 #[derive(Deserialize, Debug, Clone, PartialEq)]
@@ -278,12 +324,12 @@ pub struct RatingDelta {
 #[derive(Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ProgressChange {
-    pub xp_progressions: Vec<serde_json::Value>, // TODO: Unknown Type
+    pub xp_progressions: Vec<serde_json::Value>, // WARN: Unknown Type
     pub awarded_xp: AwardedXp,
     pub medal: String,
-    pub competitive_progress: Option<serde_json::Value>, // TODO: Unknown Type
-    pub ranked_system_progress: Option<serde_json::Value>, // TODO: Unknown Type
-    pub ranked_team_duels_progress: Option<serde_json::Value>, // TODO: Unknown Type
+    pub competitive_progress: Option<serde_json::Value>, // WARN: Unknown Type
+    pub ranked_system_progress: Option<serde_json::Value>, // WARN: Unknown Type
+    pub ranked_team_duels_progress: Option<serde_json::Value>, // WARN: Unknown Type
     pub quickplay_duels_progress: RatingDelta,
 }
 
@@ -348,6 +394,46 @@ pub enum LiveStreamEvent {
     Timer {
         time: f64,
     },
+}
+
+#[derive(Deserialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct MatchmakingSubscribe {
+    pub game_modes: Vec<String>,
+    pub queue: String,
+}
+
+#[derive(Deserialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct MatchmakingJoinInfo {
+    pub team_members_in_matchmaking: Option<serde_json::Value>, // WARN: Unknown Type
+    pub game_modes: Vec<String>,
+}
+
+#[derive(Deserialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct MatchmakingMatchInfo {
+    pub game_id: String,
+    pub game_server_node_id: String,
+}
+
+#[derive(Deserialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatMessageInfo {
+    pub id: String,
+    pub payload_type: String,
+    pub text_payload: String,
+    pub invite_payload: Option<serde_json::Value>, // WARN: Unknown Type
+    pub recipient_type: String,
+    pub recipient_id: Option<String>,
+    pub source_type: String,
+    pub source_id: String,
+    pub sent_at: String,
+    pub room_id: String,
+    pub context: String,
+    pub channel: Option<serde_json::Value>, // WARN: Unknown Type
+    pub club_payload: Option<serde_json::Value>, // WARN: Unknown Type
+    pub reaction_payload: Option<serde_json::Value>, // WARN: Unknown Type
 }
 
 #[derive(Deserialize, Debug, Clone, PartialEq)]
