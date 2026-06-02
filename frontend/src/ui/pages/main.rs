@@ -6,7 +6,7 @@ use backend::errors::BackendError;
 use backend::message::BackendMessage;
 use backend::protocol::{DuelState, MapBoundaries};
 use crossbeam::channel::{Receiver, Sender};
-use egui::DragPanButtons;
+use egui::{Color32, DragPanButtons, Grid, RichText};
 use walkers::sources::OpenStreetMap;
 use walkers::{HttpTiles, MapMemory};
 
@@ -67,7 +67,10 @@ impl MainPage {
     }
 
     fn show_hud(&mut self, ui: &mut egui::Ui, context: &mut Context) {
-        ui.heading("ShadowGuessr Intel");
+        ui.vertical_centered_justified(|ui| {
+            ui.heading("ShadowGuessr Intel");
+        });
+
         ui.add_space(20.0);
 
         egui::ScrollArea::vertical()
@@ -104,29 +107,35 @@ impl MainPage {
 
                 // Coordinates
                 if let Some(location) = &self.player_location {
-                    ui.horizontal(|ui| {
-                        ui.label(
-                            egui::RichText::new("Your Location:").strong().size(18.0),
-                        );
-                        ui.label(format!(
-                            "Lat: {:.3}, Lng: {:.3}",
-                            location.latitude, location.longitude
-                        ));
-                    });
+                    Grid::new("PLAYER_LOCATION_HUD")
+                        .num_columns(2)
+                        .show(ui, |ui| {
+                            RichText::new("Panorama:").color(Color32::WHITE).size(14.0);
+                            ui.end_row();
+
+                            ui.label(RichText::new("Latitude:").color(Color32::WHITE));
+                            ui.label(format!("{:.3}", location.latitude));
+                            ui.end_row();
+                            ui.label(RichText::new("Longitude:").color(Color32::WHITE));
+                            ui.label(format!("{:.3}", location.longitude));
+                            ui.end_row();
+                        });
                 }
                 ui.add_space(10.0);
 
                 if let Some(location) = &self.opponent_pin {
-                    ui.horizontal(|ui| {
-                        ui.label(
-                            egui::RichText::new("Opponent Location:")
-                                .strong()
-                                .size(18.0),
-                        );
-                        ui.label(format!(
-                            "Lat: {:.3}, Lng: {:.3}",
-                            location.latitude, location.longitude
-                        ));
+                    Grid::new("OPPONENT_PIN_HUD").num_columns(2).show(ui, |ui| {
+                        RichText::new("Opponent Pin:")
+                            .color(Color32::WHITE)
+                            .size(14.0);
+                        ui.end_row();
+
+                        ui.label(RichText::new("Latitude:").color(Color32::WHITE));
+                        ui.label(format!("{:.3}", location.latitude));
+                        ui.end_row();
+                        ui.label(RichText::new("Longitude:").color(Color32::WHITE));
+                        ui.label(format!("{:.3}", location.longitude));
+                        ui.end_row();
                     });
                 }
                 ui.add_space(10.0);
@@ -134,22 +143,33 @@ impl MainPage {
                 // Match stats
                 if let Some(state) = &self.game_state {
                     ui.label(
-                        egui::RichText::new(format!(
-                            "Round: {}",
-                            state.current_round_number
-                        ))
-                        .strong()
-                        .size(18.0),
+                        RichText::new(format!("Round: {}", state.current_round_number))
+                            .color(Color32::WHITE)
+                            .size(14.0),
                     );
                     ui.add_space(10.0);
 
                     for team in &state.teams {
-                        ui.label(format!(
-                            "Team {}: {} HP",
-                            team.name.to_uppercase(),
-                            team.health
-                        ));
-                        ui.label(format!("Multiplier: {}x", team.current_multiplier));
+                        Grid::new(format!("TEAM_{}_HUD", team.name))
+                            .num_columns(2)
+                            .show(ui, |ui| {
+                                let team_name =
+                                    format!("Team {}:", team.name.to_uppercase());
+                                ui.label(RichText::new(team_name).color(Color32::WHITE));
+
+                                let team_hp = format!("{} HP", team.health);
+                                ui.label(team_hp);
+
+                                ui.end_row();
+
+                                ui.label(
+                                    RichText::new("Multiplier: ").color(Color32::WHITE),
+                                );
+                                let multiplier = format!("{}x", team.current_multiplier);
+                                ui.label(multiplier);
+                                ui.end_row();
+                            });
+
                         ui.add_space(5.0);
                     }
                 } else {
