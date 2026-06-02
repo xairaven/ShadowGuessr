@@ -189,11 +189,18 @@ impl MainPage {
                     self.map_bounds = Some(bounds);
                 },
                 BackendMessage::GameStateUpdate(duel) => {
-                    // If it's the first round -> delete pins
-                    if duel.current_round_number == 1 {
+                    let is_new_round = match &self.game_state {
+                        Some(old_state) => {
+                            old_state.current_round_number != duel.current_round_number
+                        },
+                        None => true,
+                    };
+
+                    if is_new_round {
                         self.player_location = None;
                         self.opponent_pin = None;
                     }
+
                     self.game_state = Some(duel);
                 },
             }
