@@ -109,6 +109,10 @@ pub enum GameEvent {
         access_token: Option<String>,
         payload: String, // WARN: It's ChatMessageInfo. But for some reason, server gives it as shielded line
     },
+    ChatDisconnect {
+        topic: String,
+        client: String,
+    },
 }
 
 impl GameEvent {
