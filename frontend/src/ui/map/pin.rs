@@ -58,19 +58,31 @@ impl Plugin for MapPins {
         _map_memory: &MapMemory,
     ) {
         for pin in self.pins {
-            let position = pin.position;
-            // Compute pixel radius for a circle.
-            let radius = pin.radius;
-            // Project it into the position on the screen.
-            let position = projector.project(position).to_pos2();
+            // Projecting geographic coordinates into screen pixels
+            let screen_position = projector.project(pin.position).to_pos2();
+            // Pin radius in screen pixels
+            let screen_radius = pin.radius;
+
             let hovered = response
                 .hover_pos()
-                .map(|hover_pos| hover_pos.distance(position) < radius)
+                .map(|hover_pos| hover_pos.distance(screen_position) < screen_radius)
                 .unwrap_or(false);
+
+            // Bright pins
+            let alpha_multiplier = if hovered { 1.0 } else { 0.8 };
+
+            // Painting pin
             ui.painter().circle_filled(
-                position,
-                radius,
-                pin.color.gamma_multiply(if hovered { 1.0 } else { 0.7 }),
+                screen_position,
+                screen_radius,
+                pin.color.gamma_multiply(alpha_multiplier),
+            );
+
+            // Pin Stroke
+            ui.painter().circle_stroke(
+                screen_position,
+                screen_radius,
+                egui::Stroke::new(1.0, egui::Color32::BLACK),
             );
         }
     }
