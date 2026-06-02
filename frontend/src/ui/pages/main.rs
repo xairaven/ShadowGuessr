@@ -102,6 +102,35 @@ impl MainPage {
 
                 ui.add_space(20.0);
 
+                // Coordinates
+                if let Some(location) = &self.player_location {
+                    ui.horizontal(|ui| {
+                        ui.label(
+                            egui::RichText::new("Your Location:").strong().size(18.0),
+                        );
+                        ui.label(format!(
+                            "Lat: {:.3}, Lng: {:.3}",
+                            location.latitude, location.longitude
+                        ));
+                    });
+                }
+                ui.add_space(10.0);
+
+                if let Some(location) = &self.opponent_pin {
+                    ui.horizontal(|ui| {
+                        ui.label(
+                            egui::RichText::new("Opponent Location:")
+                                .strong()
+                                .size(18.0),
+                        );
+                        ui.label(format!(
+                            "Lat: {:.3}, Lng: {:.3}",
+                            location.latitude, location.longitude
+                        ));
+                    });
+                }
+                ui.add_space(10.0);
+
                 // Match stats
                 if let Some(state) = &self.game_state {
                     ui.label(
