@@ -71,11 +71,11 @@ impl MainPage {
             ui.heading("ShadowGuessr Intel");
         });
 
-        ui.add_space(20.0);
-
         egui::ScrollArea::vertical()
             .auto_shrink([false; 2])
             .show(ui, |ui| {
+                ui.add_space(10.0);
+
                 ui.vertical_centered_justified(|ui| match self.is_running {
                     false => {
                         if ui.button("START SNIFFER").clicked() {
