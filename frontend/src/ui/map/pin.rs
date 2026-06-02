@@ -59,8 +59,8 @@ impl Plugin for MapPins {
     ) {
         for pin in self.pins {
             let position = pin.position;
-            // Compute pixel radius for a 100-meter circle.
-            let radius = pin.radius * projector.scale_pixel_per_meter(position);
+            // Compute pixel radius for a circle.
+            let radius = pin.radius;
             // Project it into the position on the screen.
             let position = projector.project(position).to_pos2();
             let hovered = response
@@ -70,7 +70,7 @@ impl Plugin for MapPins {
             ui.painter().circle_filled(
                 position,
                 radius,
-                pin.color.gamma_multiply(if hovered { 0.5 } else { 0.2 }),
+                pin.color.gamma_multiply(if hovered { 1.0 } else { 0.7 }),
             );
         }
     }
