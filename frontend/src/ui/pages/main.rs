@@ -120,8 +120,8 @@ impl MainPage {
                             ui.label(format!("{:.3}", location.longitude));
                             ui.end_row();
                         });
+                    ui.add_space(10.0);
                 }
-                ui.add_space(10.0);
 
                 if let Some(location) = &self.opponent_pin {
                     Grid::new("OPPONENT_PIN_HUD").num_columns(2).show(ui, |ui| {
@@ -137,8 +137,8 @@ impl MainPage {
                         ui.label(format!("{:.3}", location.longitude));
                         ui.end_row();
                     });
+                    ui.add_space(10.0);
                 }
-                ui.add_space(10.0);
 
                 // Match stats
                 if let Some(state) = &self.game_state {
