@@ -293,7 +293,7 @@ pub struct RoundResult {
     pub score: i32,
     pub health_before: i32,
     pub health_after: i32,
-    pub best_guess: Guess,
+    pub best_guess: Option<Guess>,
     pub damage_dealt: i32,
     pub multiplier: f64,
 }
