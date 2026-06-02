@@ -8,7 +8,7 @@ use backend::protocol::{DuelState, MapBoundaries};
 use crossbeam::channel::{Receiver, Sender};
 use egui::DragPanButtons;
 use walkers::sources::OpenStreetMap;
-use walkers::{HttpTiles, MapMemory, Position};
+use walkers::{HttpTiles, MapMemory};
 
 pub struct MainPage {
     is_running: bool,
@@ -141,8 +141,8 @@ impl MainPage {
             });
     }
 
-    const KYIV_LATITUDE: f64 = 30.5234;
-    const KYIV_LONGITUDE: f64 = 50.4501;
+    const KYIV_LATITUDE: f64 = 50.4501;
+    const KYIV_LONGITUDE: f64 = 30.5234;
     fn show_map(&mut self, ui: &mut egui::Ui) {
         let mut pins = MapPins::default();
 
@@ -156,7 +156,7 @@ impl MainPage {
         let map = walkers::Map::new(
             Some(&mut self.tiles),
             &mut self.map_memory,
-            Position::new(Self::KYIV_LATITUDE, Self::KYIV_LONGITUDE),
+            walkers::lat_lon(Self::KYIV_LATITUDE, Self::KYIV_LONGITUDE),
         )
         .with_plugin(pins)
         .zoom_with_ctrl(false)
