@@ -9,6 +9,8 @@ pub struct MapPin {
     radius: f32,
 }
 
+const DEFAULT_RADIUS: f32 = 8.0;
+
 impl MapPin {
     pub fn with_location(location: &Location) -> Self {
         let position = walkers::lat_lon(location.latitude, location.longitude);
@@ -16,7 +18,7 @@ impl MapPin {
         Self {
             position,
             color: Default::default(),
-            radius: 10.0,
+            radius: DEFAULT_RADIUS,
         }
     }
 
@@ -30,13 +32,13 @@ impl MapPin {
 
     pub fn player_pin(location: &Location) -> Self {
         Self::with_location(location)
-            .with_radius(10.0)
+            .with_radius(DEFAULT_RADIUS)
             .with_color(egui::Color32::GREEN)
     }
 
     pub fn opponent_pin(location: &Location) -> Self {
         Self::with_location(location)
-            .with_radius(10.0)
+            .with_radius(DEFAULT_RADIUS)
             .with_color(egui::Color32::RED)
     }
 }
