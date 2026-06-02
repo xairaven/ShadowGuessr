@@ -189,6 +189,15 @@ impl MainPage {
                     self.map_bounds = Some(bounds);
                 },
                 BackendMessage::GameStateUpdate(duel) => {
+                    if duel.status == "Finished" || duel.status == "Canceled" {
+                        self.game_state = None;
+                        self.player_location = None;
+                        self.opponent_pin = None;
+                        self.map_bounds = None;
+                        ui.ctx().request_repaint();
+                        continue;
+                    }
+
                     let is_new_round = match &self.game_state {
                         Some(old_state) => {
                             old_state.current_round_number != duel.current_round_number
