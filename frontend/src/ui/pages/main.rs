@@ -52,7 +52,7 @@ impl MainPage {
         self.poll_backend(ui, context);
 
         egui::Panel::left("HUD_PANEL")
-            .exact_size(250.0)
+            .exact_size(200.0)
             .show_inside(ui, |ui| {
                 self.show_hud(ui, context);
             });
@@ -70,68 +70,75 @@ impl MainPage {
         ui.heading("ShadowGuessr Intel");
         ui.add_space(20.0);
 
-        ui.vertical_centered_justified(|ui| match self.is_running {
-            false => {
-                if ui.button("START SNIFFER").clicked() {
-                    backend::DataProcessorBuilder::new(
-                        context.data_tx.clone(),
-                        context.exit_flag.clone(),
-                    )
-                    .with_error_sender(self.backend_error_tx.clone())
-                    .with_interface(context.settings.interface.clone())
-                    .with_keylog_path(context.settings.keylog_path.clone())
-                    .with_map_api_key(context.settings.map_api_key.clone())
-                    .build()
-                    .run();
+        egui::ScrollArea::vertical()
+            .auto_shrink([false; 2])
+            .show(ui, |ui| {
+                ui.vertical_centered_justified(|ui| match self.is_running {
+                    false => {
+                        if ui.button("START SNIFFER").clicked() {
+                            backend::DataProcessorBuilder::new(
+                                context.data_tx.clone(),
+                                context.exit_flag.clone(),
+                            )
+                            .with_error_sender(self.backend_error_tx.clone())
+                            .with_interface(context.settings.interface.clone())
+                            .with_keylog_path(context.settings.keylog_path.clone())
+                            .with_map_api_key(context.settings.map_api_key.clone())
+                            .build()
+                            .run();
 
-                    self.is_running = true;
+                            self.is_running = true;
+                        }
+                    },
+                    true => {
+                        if ui.button("STOP SNIFFER").clicked() {
+                            context
+                                .exit_flag
+                                .store(true, std::sync::atomic::Ordering::Relaxed);
+                            self.is_running = false;
+                        }
+                    },
+                });
+
+                ui.add_space(20.0);
+
+                // Match stats
+                if let Some(state) = &self.game_state {
+                    ui.label(
+                        egui::RichText::new(format!(
+                            "Round: {}",
+                            state.current_round_number
+                        ))
+                        .strong()
+                        .size(18.0),
+                    );
+                    ui.add_space(10.0);
+
+                    for team in &state.teams {
+                        ui.label(format!(
+                            "Team {}: {} HP",
+                            team.name.to_uppercase(),
+                            team.health
+                        ));
+                        ui.label(format!("Multiplier: {}x", team.current_multiplier));
+                        ui.add_space(5.0);
+                    }
+                } else {
+                    ui.label("Waiting for duel to start...");
                 }
-            },
-            true => {
-                if ui.button("STOP SNIFFER").clicked() {
-                    context
-                        .exit_flag
-                        .store(true, std::sync::atomic::Ordering::Relaxed);
-                    self.is_running = false;
-                }
-            },
-        });
 
-        ui.add_space(20.0);
+                ui.add_space(20.0);
 
-        // Match stats
-        if let Some(state) = &self.game_state {
-            ui.label(
-                egui::RichText::new(format!("Round: {}", state.current_round_number))
-                    .strong()
-                    .size(18.0),
-            );
-            ui.add_space(10.0);
-
-            for team in &state.teams {
-                ui.label(format!(
-                    "Team {}: {} HP",
-                    team.name.to_uppercase(),
-                    team.health
-                ));
-                ui.label(format!("Multiplier: {}x", team.current_multiplier));
-                ui.add_space(5.0);
-            }
-        } else {
-            ui.label("Waiting for duel to start...");
-        }
-
-        ui.add_space(20.0);
-
-        // Navigation
-        ui.vertical_centered_justified(|ui| {
-            if ui.button("Settings").clicked() {
-                context.ui_state.switch_to_settings();
-            }
-            if ui.button("Info").clicked() {
-                context.ui_state.switch_to_info();
-            }
-        });
+                // Navigation
+                ui.vertical_centered_justified(|ui| {
+                    if ui.button("Settings").clicked() {
+                        context.ui_state.switch_to_settings();
+                    }
+                    if ui.button("Info").clicked() {
+                        context.ui_state.switch_to_info();
+                    }
+                });
+            });
     }
 
     const KYIV_LATITUDE: f64 = 30.5234;
