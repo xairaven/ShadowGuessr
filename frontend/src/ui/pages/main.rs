@@ -105,12 +105,54 @@ impl MainPage {
 
                 ui.add_space(20.0);
 
-                // Coordinates
-                if let Some(location) = &self.player_location {
-                    Grid::new("PLAYER_LOCATION_HUD")
-                        .num_columns(2)
-                        .show(ui, |ui| {
-                            RichText::new("Panorama:").color(Color32::WHITE).size(14.0);
+                // Match stats
+                if let Some(state) = &self.game_state {
+                    ui.label(
+                        RichText::new(format!("Round: {}", state.current_round_number))
+                            .color(Color32::WHITE)
+                            .size(14.0),
+                    );
+                    ui.add_space(10.0);
+
+                    // Coordinates
+                    if let Some(location) = &self.player_location {
+                        Grid::new("PLAYER_LOCATION_HUD")
+                            .num_columns(2)
+                            .show(ui, |ui| {
+                                ui.label(
+                                    RichText::new("Panorama:")
+                                        .color(Color32::WHITE)
+                                        .size(14.0),
+                                );
+                                ui.end_row();
+
+                                ui.label(
+                                    RichText::new("Latitude:").color(Color32::WHITE),
+                                );
+                                ui.label(format!("{:.3}", location.latitude));
+                                ui.end_row();
+                                ui.label(
+                                    RichText::new("Longitude:").color(Color32::WHITE),
+                                );
+                                ui.label(format!("{:.3}", location.longitude));
+                                ui.end_row();
+                            });
+                    } else {
+                        ui.label(
+                            RichText::new("Panorama: Unknown")
+                                .color(Color32::WHITE)
+                                .size(14.0),
+                        );
+                    }
+                    ui.add_space(10.0);
+
+                    if let Some(location) = &self.opponent_pin {
+                        Grid::new("OPPONENT_PIN_HUD").num_columns(2).show(ui, |ui| {
+                            ui.label(
+                                RichText::new("Opponent Pin:")
+                                    .color(Color32::WHITE)
+                                    .size(14.0),
+                            );
                             ui.end_row();
 
                             ui.label(RichText::new("Latitude:").color(Color32::WHITE));
@@ -120,33 +162,13 @@ impl MainPage {
                             ui.label(format!("{:.3}", location.longitude));
                             ui.end_row();
                         });
-                    ui.add_space(10.0);
-                }
-
-                if let Some(location) = &self.opponent_pin {
-                    Grid::new("OPPONENT_PIN_HUD").num_columns(2).show(ui, |ui| {
-                        RichText::new("Opponent Pin:")
-                            .color(Color32::WHITE)
-                            .size(14.0);
-                        ui.end_row();
-
-                        ui.label(RichText::new("Latitude:").color(Color32::WHITE));
-                        ui.label(format!("{:.3}", location.latitude));
-                        ui.end_row();
-                        ui.label(RichText::new("Longitude:").color(Color32::WHITE));
-                        ui.label(format!("{:.3}", location.longitude));
-                        ui.end_row();
-                    });
-                    ui.add_space(10.0);
-                }
-
-                // Match stats
-                if let Some(state) = &self.game_state {
-                    ui.label(
-                        RichText::new(format!("Round: {}", state.current_round_number))
-                            .color(Color32::WHITE)
-                            .size(14.0),
-                    );
+                    } else {
+                        ui.label(
+                            RichText::new("Opponent Pin: Unknown")
+                                .color(Color32::WHITE)
+                                .size(14.0),
+                        );
+                    }
                     ui.add_space(10.0);
 
                     for team in &state.teams {
