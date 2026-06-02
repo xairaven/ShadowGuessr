@@ -26,6 +26,7 @@ impl Ui {
                 .with_title(PROJECT_TITLE)
                 .with_inner_size([self.min_width, self.min_height])
                 .with_min_inner_size([self.min_width, self.min_height])
+                .with_always_on_top()
                 .with_icon(
                     eframe::icon_data::from_png_bytes(
                         &include_bytes!("../assets/icon.png")[..],
