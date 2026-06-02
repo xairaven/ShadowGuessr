@@ -187,6 +187,10 @@ impl DataProcessor {
         match event {
             GameEvent::DuelStarted { duel, .. }
             | GameEvent::DuelNewRound { duel, .. }
+            | GameEvent::DuelReplaceRoundPanorama { duel, .. }
+            | GameEvent::DuelPinPlaced { duel, .. }
+            | GameEvent::DuelRoundTimedOut { duel, .. }
+            | GameEvent::DuelPlayerGuessed { duel, .. }
             | GameEvent::DuelFinished { duel, .. } => {
                 // Pass state update
                 let _ = self

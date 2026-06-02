@@ -126,6 +126,7 @@ impl GameEvent {
         let duel = match &self {
             Self::DuelStarted { duel, .. } => duel,
             Self::DuelNewRound { duel, .. } => duel,
+            Self::DuelReplaceRoundPanorama { duel, .. } => duel,
             _ => return Ok(None),
         };
 
