@@ -86,7 +86,7 @@ pub enum GameEvent {
         client: String,
         timestamp: String,
         access_token: Option<String>,
-        payload: MatchmakingJoinInfo,
+        payload: String, // WARN: It's MatchmakingJoinInfo. But for some reason, server gives it as shielded line
     },
     #[serde(rename_all = "camelCase")]
     MatchmakingMatched {
@@ -94,7 +94,7 @@ pub enum GameEvent {
         client: String,
         timestamp: String,
         access_token: Option<String>,
-        payload: MatchmakingMatchInfo,
+        payload: String, // WARN: It's MatchmakingMatchInfo. But for some reason, server gives it as shielded line
     },
     ChatEmote {
         client: String,
@@ -107,7 +107,7 @@ pub enum GameEvent {
         client: String,
         timestamp: String,
         access_token: Option<String>,
-        payload: ChatMessageInfo,
+        payload: String, // WARN: It's ChatMessageInfo. But for some reason, server gives it as shielded line
     },
 }
 
