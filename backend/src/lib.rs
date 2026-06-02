@@ -146,8 +146,10 @@ impl DataProcessor {
                     Sniffer::unmask_websocket_payload(raw_payload, masking_key)
             {
                 // Outcoming traffic (from the player), decoding
+                log::info!("Tried to unmask. Result: {}", unmasked);
                 unmasked
             } else {
+                log::warn!("Received line with no valid payload: {}", line);
                 continue;
             };
 
@@ -175,8 +177,9 @@ impl DataProcessor {
 
     fn process_event(&mut self, event: GameEvent) -> Result<(), BackendError> {
         // Attempt to extract new coordinates whenever round data updates
-        if let Ok(Some(panorama_id)) = event.get_player_panorama() {
-            let location = self.api_client.fetch_coordinates(&panorama_id)?;
+        if let Ok(Some(panorama_id)) = event.get_player_panorama()
+            && let Some(location) = self.api_client.fetch_coordinates(&panorama_id)?
+        {
             let message = BackendMessage::PlayerLocation(location);
             let _ = self.data_sender.send(message);
         }

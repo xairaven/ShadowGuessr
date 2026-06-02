@@ -16,7 +16,7 @@ impl ApiClient {
         }
     }
 
-    pub fn fetch_coordinates(&self, pano_id: &str) -> Result<Location, ApiError> {
+    pub fn fetch_coordinates(&self, pano_id: &str) -> Result<Option<Location>, ApiError> {
         let url = format!(
             "https://maps.googleapis.com/maps/api/streetview/metadata?pano={}&key={}",
             pano_id, self.key
@@ -30,13 +30,35 @@ impl ApiClient {
             .json()
             .map_err(ApiError::Deserialize)?;
 
-        if response.status != "OK" {
+        if response.status == ApiStatus::ZeroResults.to_string() {
+            log::warn!(
+                "Failed to fetch coordinates. Zero Results. Response: {:?}. Panorama ID: {}",
+                response,
+                pano_id
+            );
+            return Ok(None);
+        } else if response.status != ApiStatus::Ok.to_string() {
             return Err(ApiError::BadStatus(response.status));
         }
 
-        response
-            .location
-            .ok_or_else(|| ApiError::BadStatus("Missing location data".to_string()))
+        Ok(response.location)
+    }
+}
+
+#[derive(Debug)]
+pub enum ApiStatus {
+    Ok,
+    ZeroResults,
+}
+
+impl std::fmt::Display for ApiStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let text = match self {
+            ApiStatus::Ok => "OK",
+            ApiStatus::ZeroResults => "ZERO_RESULTS",
+        };
+
+        write!(f, "{}", text)
     }
 }
 
