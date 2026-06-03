@@ -1,6 +1,6 @@
 [package]
 name = "frontend"
-version = "0.0.1"
+version = "1.0.0"
 authors = ["Oleksandr Kovalov <oleksandr.kovalov.work@gmail.com>"]
 
 edition = "2024"
@@ -30,7 +30,7 @@ eframe = { version = "0.34.3", default-features = false, features = [
     "x11",
 ] }
 fern = "0.7.1"
-log = "0.4.30"
+log = "0.4.31"
 o2o = "0.5.4"
 rand = "0.10.1"
 rfd = "0.17.2"
